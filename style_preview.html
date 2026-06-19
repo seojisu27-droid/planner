@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>스타일 비교 - Planner</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', 'Pretendard Variable', 'Malgun Gothic', sans-serif;
+    background: #e9ecf1;
+    padding: 32px;
+    color: #2d3436;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; letter-spacing: -0.3px; }
+  .page-sub { color: #95a5a6; font-size: 13px; margin-bottom: 28px; }
+  .styles-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .style-col { display: flex; flex-direction: column; gap: 14px; }
+  .style-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: #2d3436;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .style-desc {
+    font-size: 12px;
+    color: #95a5a6;
+    margin-bottom: 8px;
+  }
+
+  /* =============================================
+   * STYLE A — 노션/리니어 미니멀
+   * ============================================= */
+  .A-card {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    padding: 22px;
+  }
+  .A-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #2d3436;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .A-nav { display: flex; gap: 12px; align-items: center; }
+  .A-nav button {
+    background: none; border: none; cursor: pointer;
+    color: #b2bec3; font-size: 14px; padding: 2px 6px;
+    font-family: inherit;
+  }
+  .A-nav .today { color: #2d3436; font-weight: 600; font-size: 13px; letter-spacing: 0.3px; }
+  .A-input {
+    display: flex; gap: 6px; margin-bottom: 14px;
+  }
+  .A-input input {
+    flex: 1; border: 1px solid #ececec; border-radius: 6px;
+    padding: 8px 11px; font-size: 13px; font-family: inherit; outline: none;
+    background: #fafafa;
+  }
+  .A-input button {
+    background: #2d3436; color: #fff; border: none;
+    border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; font-weight: 500;
+  }
+  .A-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px;
+    border: 1px solid #f3f3f3;
+    border-left: 3px solid #5DADE2;
+    border-radius: 6px;
+    background: #fff;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .A-item .ck {
+    width: 14px; height: 14px;
+    border: 1.5px solid #dfe6e9; border-radius: 50%;
+  }
+  .A-item.done .ck { background: #00b894; border-color: #00b894; }
+  .A-item.done .tx { color: #95a5a6; }
+  .A-day {
+    border: 1px solid #ececec; border-radius: 8px;
+    padding: 10px; background: #fcfcfc;
+  }
+  .A-day .num { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .A-day .chip {
+    font-size: 10px; padding: 2px 5px;
+    border-radius: 3px; color: #fff; background: #5DADE2;
+    margin-bottom: 3px; display: inline-block;
+  }
+
+  /* =============================================
+   * STYLE B — 토스/애플 소프트
+   * ============================================= */
+  .B-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+  }
+  .B-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.7px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .B-nav { display: flex; gap: 6px; }
+  .B-nav button {
+    background: #f5f6fa; border: none;
+    border-radius: 999px; padding: 6px 12px;
+    font-size: 12px; cursor: pointer; font-family: inherit;
+    color: #636e72;
+  }
+  .B-nav .today {
+    background: #0984e3; color: #fff; font-weight: 600;
+  }
+  .B-input {
+    display: flex; gap: 8px; margin-bottom: 14px;
+  }
+  .B-input input {
+    flex: 1; border: none; border-radius: 14px;
+    padding: 11px 16px; background: #f5f6fa;
+    font-size: 13px; font-family: inherit; outline: none;
+  }
+  .B-input button {
+    background: linear-gradient(135deg, #0984e3, #0770c0);
+    color: #fff; border: none;
+    border-radius: 999px; padding: 10px 18px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(9,132,227,0.25);
+  }
+  .B-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 15px;
+    background: #fafbfd;
+    border-radius: 12px;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .B-item .ck {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid #dfe6e9;
+  }
+  .B-item.done .ck { background: #00b894; border-color: #00b894; }
+  .B-item.done .tx { color: #95a5a6; text-decoration: line-through; }
+  .B-day {
+    background: #fafbfd;
+    border-radius: 14px;
+    padding: 12px;
+  }
+  .B-day .num { font-size: 24px; font-weight: 800; letter-spacing: -1px; margin-bottom: 6px; }
+  .B-day .chip {
+    font-size: 10px; padding: 3px 7px;
+    border-radius: 999px; color: #fff; background: #5DADE2;
+    margin-bottom: 3px; display: inline-block; font-weight: 500;
+  }
+
+  /* =============================================
+   * STYLE C — 다크모드
+   * ============================================= */
+  .C-wrap {
+    background: #1a1d21;
+    border-radius: 12px;
+    padding: 22px;
+  }
+  .C-card {
+    background: #22262b;
+    border: 1px solid #2d3239;
+    border-radius: 10px;
+    padding: 22px;
+    color: #e6e8eb;
+  }
+  .C-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #e6e8eb;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .C-nav { display: flex; gap: 12px; align-items: center; }
+  .C-nav button {
+    background: none; border: none; cursor: pointer;
+    color: #6b7280; font-size: 14px; padding: 2px 6px;
+    font-family: inherit;
+  }
+  .C-nav .today { color: #e6e8eb; font-weight: 600; font-size: 13px; }
+  .C-input { display: flex; gap: 6px; margin-bottom: 14px; }
+  .C-input input {
+    flex: 1; background: #1a1d21; color: #e6e8eb;
+    border: 1px solid #3a3f47; border-radius: 6px;
+    padding: 8px 11px; font-size: 13px; font-family: inherit; outline: none;
+  }
+  .C-input button {
+    background: #4D7CFE; color: #fff; border: none;
+    border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; font-weight: 500;
+  }
+  .C-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px;
+    background: #2d3239;
+    border-left: 3px solid #5DADE2;
+    border-radius: 6px;
+    margin-bottom: 6px; font-size: 13px;
+  }
+  .C-item .ck {
+    width: 14px; height: 14px;
+    border: 1.5px solid #3a3f47; border-radius: 50%;
+  }
+  .C-item.done .ck { background: #00b894; border-color: #00b894; }
+  .C-item.done .tx { color: #6b7280; }
+  .C-day {
+    background: #2d3239;
+    border: 1px solid #3a3f47;
+    border-radius: 8px;
+    padding: 10px;
+  }
+  .C-day .num { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: #e6e8eb; }
+  .C-day .chip {
+    font-size: 10px; padding: 2px 5px;
+    border-radius: 3px; color: #fff; background: #5DADE2;
+    margin-bottom: 3px; display: inline-block;
+  }
+
+  /* Section divider */
+  .mini-label {
+    font-size: 10px; color: #95a5a6;
+    letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .C-mini-label { color: #6b7280; }
+
+  @media (max-width: 1100px) {
+    .styles-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page-title">🎨 스타일 비교 (Pretendard 적용)</div>
+<div class="page-sub">A · B · C 같은 컨텐츠를 세 가지 스타일로 비교해보세요. 마음에 드는 거 알려주시면 메인에 적용해드려요!</div>
+
+<div class="styles-grid">
+  <!-- ============ A ============ -->
+  <div class="style-col">
+    <div>
+      <div class="style-name">A — 노션/리니어 미니멀</div>
+      <div class="style-desc">얇은 보더 · 단일 액센트 · 차분 · 사무용 프리미엄</div>
+    </div>
+    <div class="A-card">
+      <div class="A-title">
+        <span>TODAY</span>
+        <div class="A-nav">
+          <button>&lt;</button>
+          <button class="today">오늘</button>
+          <button>&gt;</button>
+        </div>
+      </div>
+      <div class="A-input">
+        <input placeholder="할 일 입력" />
+        <button>추가</button>
+      </div>
+      <div class="A-item">
+        <div class="ck"></div>
+        <div class="tx">기획 리뷰 자료 정리</div>
+      </div>
+      <div class="A-item done">
+        <div class="ck"></div>
+        <div class="tx">메일 확인</div>
+      </div>
+    </div>
+    <div>
+      <div class="mini-label">위클리 셀</div>
+      <div class="A-day">
+        <div class="num">10</div>
+        <span class="chip">앱 배포</span>
+        <span class="chip" style="background:#A78BFA">팀회의 14시</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ B ============ -->
+  <div class="style-col">
+    <div>
+      <div class="style-name">B — 토스/애플 소프트</div>
+      <div class="style-desc">둥근 모서리 · 부드러움 · 친근 · 모바일 친화</div>
+    </div>
+    <div class="B-card">
+      <div class="B-title">
+        <span>오늘</span>
+        <div class="B-nav">
+          <button>‹</button>
+          <button class="today">오늘</button>
+          <button>›</button>
+        </div>
+      </div>
+      <div class="B-input">
+        <input placeholder="할 일 입력" />
+        <button>추가</button>
+      </div>
+      <div class="B-item">
+        <div class="ck"></div>
+        <div class="tx">기획 리뷰 자료 정리</div>
+      </div>
+      <div class="B-item done">
+        <div class="ck"></div>
+        <div class="tx">메일 확인</div>
+      </div>
+    </div>
+    <div>
+      <div class="mini-label">위클리 셀</div>
+      <div class="B-day">
+        <div class="num">10</div>
+        <span class="chip">앱 배포</span>
+        <span class="chip" style="background:#A78BFA">팀회의 14시</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ C ============ -->
+  <div class="style-col">
+    <div>
+      <div class="style-name">C — 다크모드</div>
+      <div class="style-desc">눈 편안 · 야근 친화 · 프로페셔널 · 코드 에디터 느낌</div>
+    </div>
+    <div class="C-wrap">
+      <div class="C-card">
+        <div class="C-title">
+          <span>TODAY</span>
+          <div class="C-nav">
+            <button>&lt;</button>
+            <button class="today">오늘</button>
+            <button>&gt;</button>
+          </div>
+        </div>
+        <div class="C-input">
+          <input placeholder="할 일 입력" />
+          <button>추가</button>
+        </div>
+        <div class="C-item">
+          <div class="ck"></div>
+          <div class="tx">기획 리뷰 자료 정리</div>
+        </div>
+        <div class="C-item done">
+          <div class="ck"></div>
+          <div class="tx">메일 확인</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="mini-label C-mini-label">위클리 셀</div>
+        <div class="C-day">
+          <div class="num">10</div>
+          <span class="chip">앱 배포</span>
+          <span class="chip" style="background:#A78BFA">팀회의 14시</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

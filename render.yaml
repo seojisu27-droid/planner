@@ -1,0 +1,19 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# 배포: Render 대시보드 → New → Blueprint → 이 저장소 선택
+services:
+  - type: web
+    name: planner
+    runtime: node
+    plan: free
+    region: singapore        # 한국에서 가장 가까운 무료 리전
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    envVars:
+      # 아래 3개는 보안값이라 Render 대시보드에서 직접 입력합니다 (sync: false)
+      - key: TURSO_URL
+        sync: false
+      - key: TURSO_TOKEN
+        sync: false
+      - key: APP_PASSWORD
+        sync: false

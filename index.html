@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Planner</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', 'Pretendard Variable', 'Malgun Gothic', '맑은 고딕', sans-serif;
+    background: #f4f5f7;
+    color: #2d3436;
+    padding: 24px;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.2px;
+  }
+  .wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    color: #2d3436;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h1 svg { display: block; }
+  .sub {
+    color: #636e72;
+    font-size: 12px;
+  }
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 20px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f0f0f4;
+  }
+  .card-header h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+  .nav { display: flex; gap: 14px; align-items: center; }
+  .nav button {
+    background: none;
+    border: none;
+    padding: 4px 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 400;
+    color: #b2bec3;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+  .nav button:hover {
+    background: none;
+    color: #2d3436;
+  }
+  .nav .today-btn {
+    font-size: 14px;
+    font-weight: 600;
+    color: #b2bec3;
+    padding: 4px 4px;
+    letter-spacing: 0.5px;
+  }
+  .nav .today-btn:hover {
+    color: #2d3436;
+    background: none;
+  }
+
+  /* ── 위클리 ── */
+  .weekly {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+  .week-day {
+    background: #fafbfd;
+    border: 1px solid #eaecf0;
+    border-radius: 14px;
+    padding: 12px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .week-day:hover { background: #f3f4f6; }
+  .week-day.today {
+    border: 1.5px solid #5dccaa;
+  }
+  .week-day.selected {
+    border: 2px solid #00b894;
+  }
+  .week-day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #ecf0f1;
+    margin-bottom: 8px;
+  }
+  .week-day-name {
+    font-size: 11px;
+    color: #636e72;
+    font-weight: 600;
+  }
+  .week-day-name.sun { color: #d63031; }
+  .week-day-name.sat { color: #0984e3; }
+  .week-day-num {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .week-todos {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+  }
+  .week-todo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 4px 7px;
+    border-radius: 7px;
+    background: #fff;
+    border: 1px solid #eef0f4;
+  }
+  .week-todo.done { background: #f0f8f0; opacity: 0.75; }
+  .week-todo.done .week-todo-text { color: #6b7c7c; }
+  .week-todo .status-btn {
+    width: 13px;
+    height: 13px;
+    font-size: 8px;
+    border-width: 1.5px;
+  }
+  .week-todo-text {
+    flex: 1;
+    word-break: break-word;
+    line-height: 1.3;
+  }
+  .week-events {
+    margin-bottom: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .week-event {
+    font-size: 12px;
+    color: #fff;
+    padding: 3px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+  }
+  .week-empty {
+    font-size: 11px;
+    color: #b2bec3;
+    text-align: center;
+    padding: 10px 0;
+  }
+  .week-progress {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #ecf0f1;
+    font-size: 10px;
+    color: #00b894;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  /* ── 데일리 ── */
+  .daily-date {
+    font-size: 13px;
+    color: #636e72;
+  }
+  .add-row {
+    display: flex;
+    gap: 0;
+    margin-bottom: 12px;
+  }
+  .add-row input,
+  .add-row textarea {
+    flex: 1;
+    padding: 7px 14px;
+    border: 1px solid transparent;
+    background: #f4f5f7;
+    border-radius: 12px 0 0 12px;
+    font-size: 14px;
+    outline: none;
+    min-width: 0;
+    font-family: inherit;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .add-row textarea {
+    resize: none;
+    min-height: 32px;
+    line-height: 1.4;
+  }
+  .add-row input:focus,
+  .add-row textarea:focus {
+    border-color: #6e7378;
+    background: #fff;
+    position: relative;
+    z-index: 1;
+  }
+  .add-row input[type="time"] { flex: 0 0 110px; }
+  .add-row button {
+    padding: 0 16px;
+    background: #6e7378;
+    color: #fff;
+    border: none;
+    border-radius: 0 12px 12px 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background 0.15s;
+    font-family: inherit;
+  }
+  .add-row button:hover { background: #555a5e; }
+  .add-row .color-dot-btn {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #dfe6e9;
+    padding: 0;
+    align-self: center;
+    cursor: pointer;
+    transition: transform 0.1s;
+    background: #ffffff;
+  }
+  .add-row .color-dot-btn:hover { transform: scale(1.1); background: #ffffff; }
+  .add-row .color-dot-btn.active {
+    box-shadow: 0 0 0 2px #2d3436;
+    transform: scale(1.1);
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #636e72;
+    margin: 14px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .section-title .count-badge {
+    background: #ecf0f1;
+    color: #636e72;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+
+  .todo-list { list-style: none; }
+  .todo-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    background: #fafbfd;
+    border: 1px solid transparent;
+    margin-bottom: 4px;
+    transition: all 0.15s;
+  }
+  .todo-item.has-memo {
+    align-items: flex-start;
+  }
+  .todo-item.has-memo .status-btn { margin-top: 2px; }
+  .todo-item.has-memo .del-btn { margin-top: -2px; }
+  .todo-item.editing {
+    align-items: center;
+  }
+  .todo-item:hover { background: #f3f6fa; }
+  .todo-item.done {
+    background: #f0f8f0;
+    border-color: transparent;
+  }
+  .todo-item.done .todo-text {
+    color: #6b7c7c;
+  }
+  .status-btn {
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: 1.5px solid #dfe6e9;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .status-btn:hover { border-color: #00b894; }
+  .todo-item.done .status-btn,
+  .week-todo.done .status-btn {
+    background: #00b894;
+    border-color: #00b894;
+  }
+  .todo-text {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    word-break: break-word;
+    white-space: pre-wrap;
+    line-height: 1.4;
+  }
+  .del-btn {
+    background: none;
+    border: none;
+    color: #b2bec3;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 4px;
+    border-radius: 4px;
+  }
+  .del-btn:hover { color: #d63031; background: #ffeaea; }
+  .edit-btn {
+    background: none;
+    border: none;
+    color: #b2bec3;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 4px;
+    border-radius: 4px;
+  }
+  .edit-btn:hover { color: #0984e3; background: #e3f2fd; }
+  /* 수정-삭제 버튼 사이 간격 좁히기 */
+  .todo-item .edit-btn + .del-btn,
+  .event-item .edit-btn + .del-btn {
+    margin-left: -6px;
+  }
+  .todo-item.editing,
+  .event-item.editing {
+    background: #fffbeb;
+    border-color: #fdcb6e;
+  }
+  .edit-textarea {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid #fdcb6e;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: none;
+    overflow: hidden;
+    min-height: 32px;
+    outline: none;
+    line-height: 1.4;
+  }
+  .edit-textarea:focus { border-color: #f39c12; }
+  .edit-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-self: center;
+    flex-shrink: 0;
+  }
+  .edit-save-btn, .edit-cancel-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .edit-save-btn { color: #00b894; }
+  .edit-save-btn:hover { background: #d4edda; }
+  .edit-cancel-btn { color: #d63031; }
+  .edit-cancel-btn:hover { background: #ffeaea; }
+
+  /* ── 할 일 메모 ── */
+  .text-stack {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .todo-memo {
+    font-size: 12px;
+    color: #636e72;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.45;
+    padding-top: 2px;
+  }
+  .edit-stack {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .edit-memo-textarea {
+    border: 1px solid #ececec;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    resize: none;
+    overflow: hidden;
+    min-height: 32px;
+    color: #2d3436;
+    background: #fff;
+    outline: none;
+    line-height: 1.4;
+    transition: border-color 0.15s;
+  }
+  .edit-memo-textarea:focus { border-color: #6e7378; }
+
+  /* 추가 영역 메모 입력칸 */
+  .add-memo-row {
+    margin-top: -6px;
+    margin-bottom: 12px;
+  }
+  .add-memo-input {
+    border: 1px solid #e3e6ea;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: none;
+    background: #fafbfd;
+    outline: none;
+    width: 100%;
+    min-height: 50px;
+    line-height: 1.4;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .add-memo-input:focus { border-color: #6e7378; background: #fff; }
+
+  .event-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px 6px 18px;
+    border-radius: 10px;
+    background: #fafbfd;
+    border: 1px solid transparent;
+    margin-bottom: 4px;
+    position: relative;
+    transition: all 0.15s;
+  }
+  .event-item::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    background: var(--stripe, #1e90ff);
+    border-radius: 0;
+  }
+  .event-item:hover { background: #f3f6fa; }
+  .event-time {
+    font-size: 12px;
+    color: #636e72;
+    font-weight: 600;
+    min-width: 60px;
+  }
+  .event-title {
+    flex: 1;
+    font-size: 14px;
+    word-break: break-word;
+    white-space: pre-wrap;
+    line-height: 1.4;
+  }
+  .empty {
+    text-align: center;
+    color: #b2bec3;
+    padding: 20px 10px;
+    font-size: 13px;
+  }
+
+  /* ── 캘린더 ── */
+  .calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .day-name {
+    text-align: center;
+    padding: 6px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #636e72;
+  }
+  .day-name.sun { color: #d63031; }
+  .day-name.sat { color: #0984e3; }
+  .day {
+    aspect-ratio: 1.1 / 1;
+    background: #fafbfd;
+    border: 1px solid #eaecf0;
+    border-radius: 10px;
+    padding: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 75px;
+    position: relative;
+  }
+  .todo-indicator {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #00b894;
+    box-shadow: 0 0 0 1.5px #fff;
+  }
+  .day:hover { background: #f3f4f6; }
+  .day.empty-cell { background: transparent; border: none; cursor: default; }
+  .day.empty-cell:hover { background: transparent; }
+  .day.today {
+    border: 1.5px solid #5dccaa;
+  }
+  .day.selected {
+    border: 2px solid #00b894;
+  }
+  .day .num {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .day.sun .num { color: #d63031; }
+  .day.sat .num { color: #0984e3; }
+  .day .events {
+    margin-top: 4px;
+    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .event-chip {
+    font-size: 11px;
+    background: #74b9ff;
+    color: #fff;
+    padding: 3px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+  }
+  .event-chip.todo { background: #fdcb6e; color: #2d3436; }
+  .event-chip.done { background: #00b894; }
+
+  /* ── 색상 팔레트 ── */
+  .color-row {
+    display: none;
+    gap: 6px;
+    margin-bottom: 14px;
+    padding: 8px 10px;
+    background: #f4f5f7;
+    border: 1px solid #e3e6ea;
+    border-radius: 8px;
+    align-items: center;
+  }
+  .color-row.visible { display: flex; }
+
+  /* 마우스 가능 환경에서만 호버 시 액션 버튼 노출 */
+  @media (hover: hover) {
+    .todo-item .drag-handle,
+    .todo-item .edit-btn,
+    .todo-item .del-btn,
+    .event-item .drag-handle,
+    .event-item .edit-btn,
+    .event-item .del-btn {
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .todo-item:hover .drag-handle,
+    .todo-item:hover .edit-btn,
+    .todo-item:hover .del-btn,
+    .todo-item.selected .drag-handle,
+    .todo-item.selected .edit-btn,
+    .todo-item.selected .del-btn,
+    .event-item:hover .drag-handle,
+    .event-item:hover .edit-btn,
+    .event-item:hover .del-btn,
+    .event-item.selected .drag-handle,
+    .event-item.selected .edit-btn,
+    .event-item.selected .del-btn {
+      opacity: 1;
+    }
+  }
+  .color-row .label {
+    font-size: 11px;
+    color: #636e72;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #dfe6e9;
+    transition: transform 0.1s;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.active {
+    box-shadow: 0 0 0 2px #2d3436;
+    transform: scale(1.15);
+  }
+
+
+  /* ── 드래그 핸들 ── */
+  .drag-handle {
+    cursor: grab;
+    color: #b2bec3;
+    font-size: 16px;
+    padding: 0 2px;
+    user-select: none;
+    line-height: 1;
+    letter-spacing: -2px;
+    flex-shrink: 0;
+  }
+  .drag-handle:hover { color: #636e72; }
+  .todo-item.dragging,
+  .event-item.dragging {
+    opacity: 0.4;
+  }
+  .todo-item.drag-over,
+  .event-item.drag-over {
+    border-top: 3px solid #0984e3;
+    padding-top: 7px;
+  }
+
+  /* ── 선택된 항목 ── */
+  .todo-item.selected,
+  .event-item.selected {
+    box-shadow: 0 0 0 1.5px #00b894;
+    background: #f0faf6;
+  }
+  .color-row.editing {
+    background: #eff6ff;
+    border-color: #74b9ff;
+  }
+  .color-row .deselect-btn {
+    margin-left: auto;
+    background: none;
+    border: 1px solid #74b9ff;
+    color: #0984e3;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .color-row .deselect-btn:hover { background: #d4e4ff; }
+
+  /* ── 백업 바 ── */
+  .backup-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 12px 18px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+  .backup-bar .backup-label {
+    font-weight: 700;
+    color: #2d3436;
+  }
+  .backup-bar button {
+    padding: 6px 14px;
+    background: #f4f5f7;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    color: #2d3436;
+    transition: background 0.15s;
+  }
+  .backup-bar button:hover { background: #e8eaef; }
+  .backup-bar .primary {
+    background: linear-gradient(135deg, #00b894, #00997a);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,184,148,0.25);
+  }
+  .backup-bar .primary:hover {
+    background: linear-gradient(135deg, #00997a, #00876a);
+  }
+  .backup-status {
+    margin-left: auto;
+    font-weight: 600;
+  }
+
+  /* ── 색상 범례 (위클리 하단 고정) ── */
+  .weekly-legend {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding-top: 12px;
+    margin-top: 14px;
+    border-top: 1px solid #ecf0f1;
+  }
+  .legend-chips {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    font-size: 11px;
+    color: #636e72;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid #dfe6e9;
+    flex-shrink: 0;
+  }
+  .legend-label {
+    white-space: nowrap;
+  }
+  .legend-settings-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: #b2bec3;
+    padding: 0 4px;
+    flex-shrink: 0;
+    font-family: inherit;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+  .legend-settings-btn:hover { color: #2d3436; }
+
+  /* ── 설정 모달 ── */
+  .settings-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .settings-overlay.visible { display: flex; }
+  .settings-modal {
+    background: #fff;
+    border-radius: 18px;
+    padding: 22px 26px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+    max-height: 85vh;
+    overflow-y: auto;
+    font-family: inherit;
+  }
+  .settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .settings-header h3 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .settings-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #b2bec3;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-family: inherit;
+  }
+  .settings-close:hover { color: #2d3436; }
+  .settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .settings-row .sw {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid #dfe6e9;
+    flex-shrink: 0;
+  }
+  .settings-row input {
+    flex: 1;
+    border: 1px solid #ececec;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    background: #fafbfd;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .settings-row input:focus {
+    border-color: #6e7378;
+    background: #fff;
+  }
+  .settings-footer {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #f0f0f4;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .settings-apply {
+    background: #6e7378;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 22px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .settings-apply:hover { background: #555a5e; }
+
+  @media (max-width: 1100px) {
+    .bottom-row { grid-template-columns: 1fr; }
+    .weekly { grid-template-columns: repeat(7, minmax(120px, 1fr)); overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="title-row">
+    <h1>Planner</h1>
+    <div class="sub">데이터는 Turso 클라우드에 동기화됩니다 · 어느 기기에서나 접속 가능</div>
+  </div>
+
+  <!-- 백업 바 -->
+  <div class="backup-bar">
+    <span class="backup-label">백업</span>
+    <button class="primary" onclick="pickBackupFolder()">📁 자동저장 폴더 지정</button>
+    <button onclick="exportJson()">⬇ 수동 내보내기</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJson(event)">
+    <button onclick="document.getElementById('importFile').click()">⬆ 불러오기</button>
+    <span class="backup-status" id="syncStatus" style="color:#636e72">동기화 확인 중…</span>
+    <span class="backup-status" id="backupStatus" style="margin-left:14px">⚠️ 폴더백업 OFF</span>
+  </div>
+
+  <!-- 상단: 위클리 -->
+  <section class="card">
+    <div class="card-header">
+      <h2 id="weekTitle">Weekly</h2>
+      <div class="nav">
+        <button onclick="changeWeek(-1)" title="지난주">&lt;</button>
+        <button class="today-btn" onclick="goThisWeek()">이번주</button>
+        <button onclick="changeWeek(1)" title="다음주">&gt;</button>
+      </div>
+    </div>
+    <div class="weekly" id="weekly"></div>
+    <div class="weekly-legend" id="weeklyLegend"></div>
+  </section>
+
+  <!-- 하단: 데일리 + 캘린더 -->
+  <div class="bottom-row">
+    <!-- 데일리 -->
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2 id="dailyTitle">TODAY</h2>
+          <div class="daily-date" id="dailyDate"></div>
+        </div>
+        <div class="nav">
+          <button onclick="changeSelected(-1)" title="이전 날">&lt;</button>
+          <button class="today-btn" onclick="selectToday()">오늘</button>
+          <button onclick="changeSelected(1)" title="다음 날">&gt;</button>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <span>할 일</span>
+        <span class="count-badge" id="todoBadge">0/0</span>
+      </div>
+      <div class="add-row">
+        <textarea id="todoInput" placeholder="할 일 입력" maxlength="300" rows="1"></textarea>
+        <button onclick="addTodo()">추가</button>
+      </div>
+      <div class="add-memo-row" id="todoMemoRow" style="display:none">
+        <textarea id="todoMemoInput" class="add-memo-input" placeholder="메모 (선택)" maxlength="500"></textarea>
+      </div>
+      <div class="color-row" id="todoColorPalette">
+        <span class="label">색상</span>
+      </div>
+      <ul class="todo-list" id="todoList"></ul>
+
+      <div class="section-title">
+        <span>일정</span>
+        <span class="count-badge" id="evtBadge">0</span>
+      </div>
+      <div class="add-row">
+        <textarea id="evtTitle" placeholder="일정 입력" maxlength="200" rows="1"></textarea>
+        <button onclick="addEvent()">추가</button>
+      </div>
+      <div class="color-row" id="colorPalette">
+        <span class="label">색상</span>
+      </div>
+      <div id="eventList"></div>
+    </section>
+
+    <!-- 캘린더 -->
+    <section class="card">
+      <div class="card-header">
+        <h2 id="calTitle"></h2>
+        <div class="nav">
+          <button onclick="changeMonth(-1)" title="지난달">&lt;</button>
+          <button class="today-btn" onclick="goToday()">오늘</button>
+          <button onclick="changeMonth(1)" title="다음달">&gt;</button>
+        </div>
+      </div>
+      <div class="calendar" id="calendar"></div>
+    </section>
+  </div>
+</div>
+
+<!-- 컬러 라벨 수정 모달 -->
+<div class="settings-overlay" id="settingsOverlay" onclick="if(event.target===this)closeSettings()">
+  <div class="settings-modal">
+    <div class="settings-header">
+      <h3>컬러 라벨 수정</h3>
+      <button class="settings-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div id="settingsBody"></div>
+    <div class="settings-footer">
+      <button class="settings-apply" onclick="applyColorLabels()">수정</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'workboard_v2';
+const COLORS = [
+  { key: 'white',  bg: '#FFFFFF', text: '#2d3436', border: '#b2bec3', label: '일반 업무' },
+  { key: 'red',    bg: '#FF6B6B', text: '#fff', label: '기획 리뷰' },
+  { key: 'orange', bg: '#FF9F43', text: '#fff', label: '내부 리뷰' },
+  { key: 'yellow', bg: '#FFD166', text: '#fff', label: '사업부 체크리스트' },
+  { key: 'green',  bg: '#7BC47F', text: '#fff', label: '기획서 배포' },
+  { key: 'sky',    bg: '#5DADE2', text: '#fff', label: '앱/웹/서버 배포' },
+  { key: 'teal',   bg: '#4ECDC4', text: '#fff', label: '확인 필요 / 마감 일정' },
+  { key: 'blue',   bg: '#5064B3', text: '#fff', label: '교육' },
+  { key: 'purple', bg: '#A78BFA', text: '#fff', label: '팀회의' },
+  { key: 'pink',   bg: '#F472B6', text: '#fff', label: '요건 미팅' },
+];
+function colorOf(key) {
+  return COLORS.find(c => c.key === key) || COLORS[0]; // 기본: 흰색
+}
+
+// ── 컬러 라벨 (커스텀 명칭) ──
+const COLOR_LABELS_KEY = 'workboard_color_labels';
+let colorLabels = {};
+try { colorLabels = JSON.parse(localStorage.getItem(COLOR_LABELS_KEY) || '{}'); } catch {}
+function getColorLabel(c) {
+  const custom = colorLabels[c.key];
+  if (custom && custom.trim()) return custom;
+  return c.label || c.key;
+}
+function saveColorLabels() {
+  try { localStorage.setItem(COLOR_LABELS_KEY, JSON.stringify(colorLabels)); } catch {}
+  schedulePush();
+}
+function openSettings() {
+  document.getElementById('settingsOverlay').classList.add('visible');
+  renderSettings();
+}
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('visible');
+}
+function renderSettings() {
+  const body = document.getElementById('settingsBody');
+  body.innerHTML = COLORS.map(c => `
+    <div class="settings-row">
+      <span class="sw" style="background:${c.bg}"></span>
+      <input type="text" value="${escapeHtml(getColorLabel(c))}" data-key="${c.key}" maxlength="40" placeholder="${escapeHtml(c.label || c.key)}" />
+    </div>
+  `).join('');
+  // 엔터키로 바로 적용
+  body.querySelectorAll('input').forEach(input => {
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); applyColorLabels(); }
+    };
+  });
+}
+function applyColorLabels() {
+  document.querySelectorAll('#settingsBody input').forEach(input => {
+    const key = input.dataset.key;
+    const v = input.value;
+    if (v.trim()) colorLabels[key] = v;
+    else delete colorLabels[key];
+  });
+  saveColorLabels();
+  renderLegend();
+  renderColorPalette();
+  renderTodoColorPalette();
+  closeSettings();
+}
+function chipStyle(c) {
+  const border = c.border ? `border:1px solid ${c.border};` : '';
+  return `background:${c.bg};color:${c.text};${border}`;
+}
+function stripeColor(c) { return c.border || c.bg; }
+let state = loadState();
+let calYear, calMonth;
+let weekStart;
+let selectedKey;
+let selectedColor = 'white';
+let selectedTodoColor = 'white';
+let selectedItem = null; // { kind, k, idx } - 색상 편집용 선택 항목
+let editingItem = null;  // { kind, k, idx } - 텍스트 수정 중인 항목
+let inputFocused = { todo: false, event: false }; // 입력창 포커스 여부 → 팔레트 표시
+
+function selectItem(kind, k, idx) {
+  if (selectedItem && selectedItem.kind === kind && selectedItem.k === k && selectedItem.idx === idx) {
+    selectedItem = null;
+  } else {
+    selectedItem = { kind, k, idx };
+  }
+  renderDaily();
+  renderColorPalette();
+  renderTodoColorPalette();
+}
+function deselectItem() {
+  selectedItem = null;
+  renderDaily();
+  renderColorPalette();
+  renderTodoColorPalette();
+}
+
+function autoGrowTextarea(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+function startEdit(kind, k, idx) {
+  editingItem = { kind, k, idx };
+  selectedItem = null;
+  renderDaily();
+  renderColorPalette();
+  renderTodoColorPalette();
+  setTimeout(() => {
+    const ta = document.getElementById('editTextarea');
+    const memoTa = document.getElementById('editMemoTextarea');
+    [ta, memoTa].forEach(el => {
+      if (!el) return;
+      autoGrowTextarea(el);
+      el.addEventListener('input', () => autoGrowTextarea(el));
+    });
+    if (ta) {
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    }
+  }, 0);
+}
+function saveEdit() {
+  if (!editingItem) return;
+  const ta = document.getElementById('editTextarea');
+  const memoTa = document.getElementById('editMemoTextarea');
+  if (!ta) return;
+  const newText = ta.value.trim();
+  if (!newText) { cancelEdit(); return; }
+  const { kind, k, idx } = editingItem;
+  if (kind === 'todo') {
+    if (state.todos[k] && state.todos[k][idx]) {
+      state.todos[k][idx].text = newText;
+      if (memoTa) {
+        const memo = memoTa.value.trim();
+        if (memo) state.todos[k][idx].memo = memo;
+        else delete state.todos[k][idx].memo;
+      }
+    }
+  } else {
+    if (state.events[k] && state.events[k][idx]) state.events[k][idx].title = newText;
+  }
+  editingItem = null;
+  saveState();
+  renderAll();
+}
+function cancelEdit() {
+  editingItem = null;
+  renderDaily();
+}
+function handleEditKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    saveEdit();
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    cancelEdit();
+  }
+}
+
+function loadState() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { todos: {}, events: {} };
+  } catch { return { todos: {}, events: {} }; }
+}
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  writeBackupToFolder();
+  schedulePush();
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+function dateKey(d) {
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function keyToDate(k) {
+  const [y, m, d] = k.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+function todayKey() { return dateKey(new Date()); }
+function getWeekStart(d) {
+  const dt = new Date(d);
+  const day = dt.getDay();
+  dt.setDate(dt.getDate() - day); // 일요일 시작
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+function formatDateFull(key) {
+  const days = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+  const d = keyToDate(key);
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}`;
+}
+
+// ── 위클리 ──
+function renderWeekly() {
+  const days = ['일','월','화','수','목','금','토'];
+  const dowClass = ['sun','','','','','','sat'];
+  document.getElementById('weekTitle').textContent = 'Weekly';
+
+  const today = todayKey();
+  const container = document.getElementById('weekly');
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + i);
+    const k = dateKey(d);
+    const todos = state.todos[k] || [];
+    const events = state.events[k] || [];
+    const done = todos.filter(t => t.done).length;
+    const cls = ['week-day'];
+    if (k === today) cls.push('today');
+    if (k === selectedKey) cls.push('selected');
+
+    let todoHtml = '';
+    if (todos.length === 0 && events.length === 0) {
+      todoHtml = '<div class="week-empty">-</div>';
+    } else {
+      todoHtml = todos.map((t, idx) => {
+        return `
+        <div class="week-todo ${t.done?'done':''}">
+          <button class="status-btn" onclick="event.stopPropagation(); toggleTodo('${k}', ${idx})" title="${t.done?'완료':'미완료'}">${t.done?'✓':''}</button>
+          <span class="week-todo-text">${escapeHtml(t.text)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    let evtHtml = '';
+    if (events.length > 0) {
+      evtHtml = '<div class="week-events">' + events.map(e => {
+        const c = colorOf(e.color);
+        return `<div class="week-event" style="${chipStyle(c)}">${escapeHtml(e.title)}</div>`;
+      }).join('') + '</div>';
+    }
+
+    const progressHtml = todos.length > 0
+      ? `<div class="week-progress">${done}/${todos.length} 완료</div>` : '';
+
+    html += `<div class="${cls.join(' ')}" onclick="selectDay('${k}')">
+      <div class="week-day-header">
+        <span class="week-day-num">${d.getDate()}</span>
+        <span class="week-day-name ${dowClass[i]}">${days[i]}</span>
+      </div>
+      ${evtHtml}
+      <div class="week-todos">${todoHtml}</div>
+      ${progressHtml}
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+function changeWeek(delta) {
+  weekStart.setDate(weekStart.getDate() + delta*7);
+  renderWeekly();
+}
+function goThisWeek() {
+  weekStart = getWeekStart(new Date());
+  renderWeekly();
+}
+
+// ── 데일리 ──
+function renderDaily() {
+  const k = selectedKey;
+  const isToday = k === todayKey();
+  document.getElementById('dailyTitle').textContent = isToday ? 'TODAY' : '선택한 날짜';
+  document.getElementById('dailyDate').textContent = formatDateFull(k);
+
+  const todos = state.todos[k] || [];
+  const events = state.events[k] || [];
+  const done = todos.filter(t => t.done).length;
+  document.getElementById('todoBadge').textContent = `${done}/${todos.length}`;
+  document.getElementById('evtBadge').textContent = events.length;
+
+  const ul = document.getElementById('todoList');
+  if (todos.length === 0) {
+    ul.innerHTML = '<li class="empty">할 일이 없습니다. 위에서 추가해보세요!</li>';
+  } else {
+    ul.innerHTML = todos.map((t, i) => {
+      const isEditing = editingItem && editingItem.kind==='todo' && editingItem.k===k && editingItem.idx===i;
+      if (isEditing) {
+        return `
+        <li class="todo-item editing">
+          <div class="edit-stack">
+            <textarea id="editTextarea" class="edit-textarea" onkeydown="handleEditKey(event)" rows="1">${escapeHtml(t.text)}</textarea>
+            <textarea id="editMemoTextarea" class="edit-memo-textarea" placeholder="메모 (선택)" rows="2">${escapeHtml(t.memo || '')}</textarea>
+          </div>
+          <div class="edit-actions">
+            <button class="edit-save-btn" onclick="saveEdit()" title="저장">✓</button>
+            <button class="edit-cancel-btn" onclick="cancelEdit()" title="취소 (Esc)">✕</button>
+          </div>
+        </li>`;
+      }
+      return `
+      <li class="todo-item ${t.done?'done':''} ${t.memo?'has-memo':''}"
+          draggable="true"
+          title="더블클릭으로 수정"
+          ondblclick="if(!event.target.closest('button')) startEdit('todo','${k}',${i})"
+          ondragstart="onDragStart(event,'todo','${k}',${i})"
+          ondragend="onDragEnd(event)"
+          ondragover="onDragOver(event,'todo','${k}')"
+          ondragleave="onDragLeave(event)"
+          ondrop="onDrop(event,'todo','${k}',${i})">
+        <button class="status-btn" onclick="toggleTodo('${k}', ${i})" title="${t.done?'완료':'미완료'}">${t.done?'✓':''}</button>
+        <div class="text-stack">
+          <span class="todo-text">${escapeHtml(t.text)}</span>
+          ${t.memo ? `<span class="todo-memo">${escapeHtml(t.memo)}</span>` : ''}
+        </div>
+        <button class="del-btn" onclick="deleteTodo('${k}', ${i})">✕</button>
+      </li>`;
+    }).join('');
+  }
+
+  const evDiv = document.getElementById('eventList');
+  if (events.length === 0) {
+    evDiv.innerHTML = '<div class="empty">일정이 없습니다.</div>';
+  } else {
+    evDiv.innerHTML = events.map((e, i) => {
+      const c = colorOf(e.color);
+      const isSel = selectedItem && selectedItem.kind==='event' && selectedItem.k===k && selectedItem.idx===i;
+      const isEditing = editingItem && editingItem.kind==='event' && editingItem.k===k && editingItem.idx===i;
+      if (isEditing) {
+        return `
+        <div class="event-item editing" style="--stripe:${stripeColor(c)}">
+          <textarea id="editTextarea" class="edit-textarea" onkeydown="handleEditKey(event)" rows="2">${escapeHtml(e.title)}</textarea>
+          <button class="edit-save-btn" onclick="saveEdit()" title="저장 (Enter)">✓</button>
+          <button class="edit-cancel-btn" onclick="cancelEdit()" title="취소 (Esc)">✕</button>
+        </div>`;
+      }
+      return `
+      <div class="event-item ${isSel?'selected':''}" style="--stripe:${stripeColor(c)}"
+          draggable="true"
+          onclick="if(!event.target.closest('button')) selectItem('event','${k}',${i})"
+          ondragstart="onDragStart(event,'event','${k}',${i})"
+          ondragend="onDragEnd(event)"
+          ondragover="onDragOver(event,'event','${k}')"
+          ondragleave="onDragLeave(event)"
+          ondrop="onDrop(event,'event','${k}',${i})">
+        <span class="event-title">${escapeHtml(e.title)}</span>
+        <button class="edit-btn" onclick="startEdit('event','${k}',${i})" title="수정">✎</button>
+        <button class="del-btn" onclick="deleteEvent('${k}', ${i})">✕</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+function renderPaletteFor(kind) {
+  const divId = kind === 'event' ? 'colorPalette' : 'todoColorPalette';
+  const div = document.getElementById(divId);
+  const editing = selectedItem && selectedItem.kind === kind && selectedItem.k === selectedKey;
+  const newMode = inputFocused[kind] && !editing;
+
+  if (!editing && !newMode) {
+    div.classList.remove('visible');
+    div.innerHTML = '';
+    return;
+  }
+
+  let activeColor, onPick;
+  if (editing) {
+    const arr = kind === 'event' ? state.events[selectedItem.k] : state.todos[selectedItem.k];
+    const targetItem = arr && arr[selectedItem.idx];
+    if (!targetItem) {
+      div.classList.remove('visible');
+      div.innerHTML = '';
+      return;
+    }
+    activeColor = targetItem.color || 'white';
+    onPick = (color) => {
+      targetItem.color = color;
+      saveState();
+      renderAll();
+    };
+  } else {
+    activeColor = kind === 'event' ? selectedColor : selectedTodoColor;
+    onPick = (color) => {
+      if (kind === 'event') selectedColor = color;
+      else selectedTodoColor = color;
+      renderPaletteFor(kind);
+    };
+  }
+
+  const swatches = COLORS.map(c =>
+    `<div class="swatch ${c.key===activeColor?'active':''}" style="background:${c.bg}" data-color="${c.key}" title="${escapeHtml(getColorLabel(c))}"></div>`
+  ).join('');
+  div.classList.add('visible');
+  div.innerHTML = `<span class="label">색상</span>${swatches}`;
+  div.querySelectorAll('.swatch').forEach(el => {
+    // textarea가 포커스 잃지 않도록 mousedown 막기 → 팔레트 유지
+    el.onmousedown = (e) => e.preventDefault();
+    el.onclick = () => onPick(el.dataset.color);
+  });
+}
+function renderColorPalette() { renderPaletteFor('event'); }
+let dragState = null;
+function onDragStart(e, kind, k, idx) {
+  dragState = { kind, k, idx };
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.classList.add('dragging');
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  dragState = null;
+}
+function onDragOver(e, kind, k) {
+  if (!dragState || dragState.kind !== kind || dragState.k !== k) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function onDrop(e, kind, k, idx) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!dragState || dragState.kind !== kind || dragState.k !== k) return;
+  const arr = kind === 'event' ? state.events[k] : state.todos[k];
+  const from = dragState.idx;
+  if (from === idx) return;
+  const [item] = arr.splice(from, 1);
+  arr.splice(idx, 0, item);
+  saveState();
+  renderAll();
+}
+
+function renderTodoColorPalette() { renderPaletteFor('todo'); }
+function selectDay(k) {
+  selectedItem = null;
+  selectedKey = k;
+  const d = keyToDate(k);
+  // 주가 바뀌면 위클리도 이동
+  const ws = getWeekStart(d);
+  if (ws.getTime() !== weekStart.getTime()) {
+    weekStart = ws;
+  }
+  // 달도 바뀌면 캘린더 이동
+  if (d.getFullYear() !== calYear || d.getMonth() !== calMonth) {
+    calYear = d.getFullYear();
+    calMonth = d.getMonth();
+  }
+  renderAll();
+}
+function changeSelected(delta) {
+  const d = keyToDate(selectedKey);
+  d.setDate(d.getDate() + delta);
+  selectDay(dateKey(d));
+}
+function selectToday() {
+  selectDay(todayKey());
+}
+function addTodo() {
+  const input = document.getElementById('todoInput');
+  const memoInput = document.getElementById('todoMemoInput');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!state.todos[selectedKey]) state.todos[selectedKey] = [];
+  const memo = memoInput ? memoInput.value.trim() : '';
+  const todo = { text, done: false, color: 'white' };
+  if (memo) todo.memo = memo;
+  state.todos[selectedKey].push(todo);
+  input.value = '';
+  if (memoInput) {
+    memoInput.value = '';
+    const row = document.getElementById('todoMemoRow');
+    if (row) row.style.display = 'none';
+  }
+  saveState();
+  renderAll();
+}
+function toggleTodo(k, i) {
+  state.todos[k][i].done = !state.todos[k][i].done;
+  saveState();
+  renderAll();
+}
+function deleteTodo(k, i) {
+  state.todos[k].splice(i, 1);
+  if (state.todos[k].length === 0) delete state.todos[k];
+  if (selectedItem && selectedItem.kind==='todo' && selectedItem.k===k && selectedItem.idx===i) selectedItem = null;
+  saveState();
+  renderAll();
+}
+function addEvent() {
+  const title = document.getElementById('evtTitle').value.trim();
+  if (!title) return;
+  if (!state.events[selectedKey]) state.events[selectedKey] = [];
+  state.events[selectedKey].push({ title, color: selectedColor });
+  saveState();
+  document.getElementById('evtTitle').value = '';
+  renderAll();
+}
+function deleteEvent(k, i) {
+  state.events[k].splice(i, 1);
+  if (state.events[k].length === 0) delete state.events[k];
+  if (selectedItem && selectedItem.kind==='event' && selectedItem.k===k && selectedItem.idx===i) selectedItem = null;
+  saveState();
+  renderAll();
+}
+
+// ── 캘린더 ──
+function renderCalendar() {
+  const now = new Date();
+  document.getElementById('calTitle').textContent = `${calYear}년 ${calMonth+1}월`;
+  const cal = document.getElementById('calendar');
+  const dayNames = ['일','월','화','수','목','금','토'];
+  let html = dayNames.map((n, i) =>
+    `<div class="day-name ${i===0?'sun':''} ${i===6?'sat':''}">${n}</div>`
+  ).join('');
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const lastDate = new Date(calYear, calMonth+1, 0).getDate();
+  for (let i = 0; i < firstDay; i++) html += '<div class="day empty-cell"></div>';
+  for (let d = 1; d <= lastDate; d++) {
+    const k = `${calYear}-${pad(calMonth+1)}-${pad(d)}`;
+    const dow = new Date(calYear, calMonth, d).getDay();
+    const isToday = (calYear===now.getFullYear() && calMonth===now.getMonth() && d===now.getDate());
+    const isSelected = (selectedKey === k);
+    const cls = ['day'];
+    if (isToday) cls.push('today');
+    if (isSelected) cls.push('selected');
+    if (dow===0) cls.push('sun');
+    if (dow===6) cls.push('sat');
+
+    const events = state.events[k] || [];
+    const hasTodos = (state.todos[k] || []).length > 0;
+    let chips = '';
+    const maxChips = 4;
+    const shown = events.slice(0, maxChips);
+    for (const e of shown) {
+      const c = colorOf(e.color);
+      chips += `<div class="event-chip" style="${chipStyle(c)}">${escapeHtml(e.title)}</div>`;
+    }
+    const extra = events.length - shown.length;
+    if (extra > 0) chips += `<div class="event-chip" style="background:#b2bec3;color:#fff">+${extra}개 더</div>`;
+
+    html += `<div class="${cls.join(' ')}" onclick="selectDay('${k}')">
+      ${hasTodos ? '<span class="todo-indicator" title="할 일 있음"></span>' : ''}
+      <div class="num">${d}</div>
+      <div class="events">${chips}</div>
+    </div>`;
+  }
+  cal.innerHTML = html;
+}
+function changeMonth(delta) {
+  calMonth += delta;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+function goToday() {
+  selectToday();
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderAll() {
+  renderWeekly();
+  renderDaily();
+  renderCalendar();
+}
+
+// ── 백업 ──
+let dirHandle = null;
+let lastSaveTime = null;
+
+function openBackupDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('workboard-fs', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('handles');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function storeBackupDir(handle) {
+  const db = await openBackupDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('handles', 'readwrite');
+    tx.objectStore('handles').put(handle, 'dir');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function loadBackupDir() {
+  try {
+    const db = await openBackupDb();
+    return await new Promise((resolve) => {
+      const tx = db.transaction('handles', 'readonly');
+      const req = tx.objectStore('handles').get('dir');
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  } catch { return null; }
+}
+
+async function pickBackupFolder() {
+  if (!window.showDirectoryPicker) {
+    alert('이 브라우저는 자동 폴더 저장을 지원하지 않습니다.\n크롬이나 엣지를 써주세요. 그 동안에는 "수동 내보내기"로 백업 가능합니다.');
+    return;
+  }
+  try {
+    const h = await window.showDirectoryPicker({ mode: 'readwrite' });
+    dirHandle = h;
+    await storeBackupDir(h);
+    await writeBackupToFolder();
+    alert('백업 폴더 설정 완료!\n이제 변경할 때마다 자동으로 저장됩니다.\n(todolist-data.json + todolist-readable.md)');
+  } catch (e) {
+    if (e.name !== 'AbortError') alert('폴더 선택 실패: ' + e.message);
+  }
+}
+
+async function writeBackupToFolder() {
+  if (!dirHandle) return;
+  try {
+    const opts = { mode: 'readwrite' };
+    let perm = await dirHandle.queryPermission(opts);
+    if (perm !== 'granted') {
+      perm = await dirHandle.requestPermission(opts);
+      if (perm !== 'granted') return;
+    }
+    const jh = await dirHandle.getFileHandle('todolist-data.json', { create: true });
+    const jw = await jh.createWritable();
+    await jw.write(JSON.stringify(state, null, 2));
+    await jw.close();
+
+    const mh = await dirHandle.getFileHandle('todolist-readable.md', { create: true });
+    const mw = await mh.createWritable();
+    await mw.write(stateToMarkdown(state));
+    await mw.close();
+
+    lastSaveTime = new Date();
+    updateBackupStatus();
+  } catch (e) {
+    console.error('백업 저장 실패', e);
+  }
+}
+
+function stateToMarkdown(s) {
+  let md = '# 📋 내 업무 정리\n\n';
+  md += `_마지막 저장: ${new Date().toLocaleString('ko-KR')}_\n\n`;
+  const dates = Array.from(new Set([
+    ...Object.keys(s.todos || {}),
+    ...Object.keys(s.events || {})
+  ])).sort().reverse();
+  for (const k of dates) {
+    md += `## ${k}\n\n`;
+    const events = (s.events && s.events[k]) || [];
+    if (events.length) {
+      md += '**📅 일정**\n';
+      events.forEach(e => {
+        md += `- ${e.time || '종일'} · ${e.title}\n`;
+      });
+      md += '\n';
+    }
+    const todos = (s.todos && s.todos[k]) || [];
+    if (todos.length) {
+      md += '**📝 할 일**\n';
+      todos.forEach(t => {
+        md += `- [${t.done ? 'x' : ' '}] ${t.text}\n`;
+        if (t.memo) {
+          md += `  > ${t.memo.replace(/\n/g, '\n  > ')}\n`;
+        }
+      });
+      md += '\n';
+    }
+  }
+  return md;
+}
+
+function exportJson() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const d = new Date();
+  a.download = `todolist-backup-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJson(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.todos || !data.events) throw new Error('todos/events 필드 없음');
+      if (!confirm('현재 데이터를 덮어씁니다. 계속하시겠습니까?')) return;
+      state = data;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      writeBackupToFolder();
+      schedulePush();
+      renderAll();
+      alert('불러오기 완료!');
+    } catch (e) {
+      alert('JSON 형식이 올바르지 않습니다: ' + e.message);
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+  ev.target.value = '';
+}
+
+// ── 색상 범례 (위클리 하단 고정) ──
+function renderLegend() {
+  const panel = document.getElementById('weeklyLegend');
+  if (!panel) return;
+  const chips = COLORS.map(c => `
+    <div class="legend-item">
+      <span class="legend-swatch" style="background:${c.bg}"></span>
+      <span class="legend-label">${escapeHtml(getColorLabel(c))}</span>
+    </div>
+  `).join('');
+  panel.innerHTML = `
+    <div class="legend-chips">${chips}</div>
+    <button class="legend-settings-btn" onclick="openSettings()" title="컬러 라벨 수정">⚙</button>
+  `;
+}
+
+function updateBackupStatus() {
+  const el = document.getElementById('backupStatus');
+  if (!el) return;
+  if (!dirHandle) {
+    el.textContent = '⚠️ 자동저장 OFF · 수동 내보내기 권장';
+    el.style.color = '#d63031';
+  } else if (lastSaveTime) {
+    el.textContent = `✓ ${pad(lastSaveTime.getHours())}:${pad(lastSaveTime.getMinutes())} 자동저장됨`;
+    el.style.color = '#00b894';
+  } else {
+    el.textContent = '✓ 백업 폴더 지정됨';
+    el.style.color = '#00b894';
+  }
+}
+
+// ── 클라우드 동기화 (Turso 백엔드) ──
+const PW_KEY = 'planner_password';
+let syncEnabled = false;
+let pushTimer = null;
+
+function getPw() { return localStorage.getItem(PW_KEY) || ''; }
+function apiHeaders() {
+  return { 'Content-Type': 'application/json', 'x-app-password': getPw() };
+}
+function setSyncStatus(text, color) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = color || '#636e72';
+}
+
+async function ensureAuth() {
+  // 비밀번호 검증 루프 (취소 시 오프라인 모드)
+  for (let attempt = 0; attempt < 5; attempt++) {
+    let pw = getPw();
+    if (!pw) {
+      pw = prompt('플래너 접근 비밀번호를 입력하세요');
+      if (pw === null) return false;
+      localStorage.setItem(PW_KEY, pw);
+    }
+    try {
+      const r = await fetch('/api/auth', { headers: apiHeaders() });
+      if (r.ok) return true;
+      if (r.status === 401) {
+        localStorage.removeItem(PW_KEY);
+        alert('비밀번호가 올바르지 않습니다. 다시 입력해주세요.');
+        continue;
+      }
+      return false;
+    } catch (e) {
+      return false; // 네트워크 오류 → 오프라인
+    }
+  }
+  return false;
+}
+
+async function pullFromServer() {
+  try {
+    const r = await fetch('/api/state', { headers: apiHeaders() });
+    if (!r.ok) return false;
+    const data = await r.json();
+    state = { todos: data.todos || {}, events: data.events || {} };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (data.colorLabels && Object.keys(data.colorLabels).length) {
+      colorLabels = data.colorLabels;
+      localStorage.setItem(COLOR_LABELS_KEY, JSON.stringify(colorLabels));
+    }
+    return true;
+  } catch (e) { return false; }
+}
+
+function schedulePush() {
+  if (!syncEnabled) return;
+  setSyncStatus('● 저장 중…', '#f39c12');
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(pushToServer, 800);
+}
+
+async function pushToServer() {
+  if (!syncEnabled) return;
+  try {
+    const r = await fetch('/api/state', {
+      method: 'PUT',
+      headers: apiHeaders(),
+      body: JSON.stringify({ todos: state.todos, events: state.events, colorLabels }),
+    });
+    if (r.ok) {
+      const d = await r.json();
+      const t = new Date(d.updated_at);
+      setSyncStatus(`☁ ${pad(t.getHours())}:${pad(t.getMinutes())} 동기화됨`, '#00b894');
+    } else if (r.status === 401) {
+      setSyncStatus('⚠ 인증 필요 (새로고침)', '#d63031');
+    } else {
+      setSyncStatus('⚠ 저장 실패 (로컬엔 저장됨)', '#d63031');
+    }
+  } catch (e) {
+    setSyncStatus('⚠ 오프라인 (로컬엔 저장됨)', '#d63031');
+  }
+}
+
+async function initSync() {
+  setSyncStatus('동기화 확인 중…');
+  const ok = await ensureAuth();
+  if (!ok) {
+    syncEnabled = false;
+    setSyncStatus('⚠ 오프라인 모드 (로컬에만 저장)', '#d63031');
+    return;
+  }
+  syncEnabled = true;
+  const pulled = await pullFromServer();
+  renderAll();
+  renderLegend();
+  renderColorPalette();
+  renderTodoColorPalette();
+  setSyncStatus(pulled ? '☁ 동기화됨' : '⚠ 불러오기 실패', pulled ? '#00b894' : '#d63031');
+}
+
+// 초기화
+const now = new Date();
+calYear = now.getFullYear();
+calMonth = now.getMonth();
+weekStart = getWeekStart(now);
+selectedKey = todayKey();
+
+// 할 일 입력칸 포커스 → 메모 입력칸 펼치기
+const todoIn = document.getElementById('todoInput');
+const todoMemoIn = document.getElementById('todoMemoInput');
+const todoMemoRow = document.getElementById('todoMemoRow');
+if (todoIn && todoMemoIn && todoMemoRow) {
+  todoIn.addEventListener('focus', () => {
+    todoMemoRow.style.display = 'block';
+  });
+  const checkHideMemo = () => {
+    setTimeout(() => {
+      const a = document.activeElement;
+      if (a !== todoIn && a !== todoMemoIn && !todoMemoIn.value.trim()) {
+        todoMemoRow.style.display = 'none';
+      }
+    }, 150);
+  };
+  todoIn.addEventListener('blur', checkHideMemo);
+  todoMemoIn.addEventListener('blur', checkHideMemo);
+}
+
+// 일정 입력칸 포커스 → 색상 팔레트 표시
+const evtIn = document.getElementById('evtTitle');
+if (evtIn) {
+  evtIn.addEventListener('focus', () => {
+    inputFocused.event = true;
+    if (selectedItem && selectedItem.kind === 'event') selectedItem = null;
+    renderDaily();
+    renderPaletteFor('event');
+  });
+  evtIn.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (document.activeElement !== evtIn) {
+        inputFocused.event = false;
+        renderPaletteFor('event');
+      }
+    }, 150);
+  });
+}
+
+renderColorPalette();
+renderTodoColorPalette();
+renderAll();
+renderLegend();
+loadBackupDir().then(h => {
+  if (h) dirHandle = h;
+  updateBackupStatus();
+});
+
+// 서버와 동기화 시작 (비밀번호 입력 → 클라우드 데이터 불러오기)
+initSync();
+</script>
+</body>
+</html>
