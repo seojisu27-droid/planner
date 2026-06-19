@@ -5,7 +5,11 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const { TURSO_URL, TURSO_TOKEN, APP_PASSWORD, PORT } = process.env;
+// 환경변수에 붙여넣기로 끼어든 앞뒤 공백/줄바꿈을 제거 (Render 입력 실수 방지)
+const TURSO_URL = process.env.TURSO_URL?.trim();
+const TURSO_TOKEN = process.env.TURSO_TOKEN?.trim();
+const APP_PASSWORD = process.env.APP_PASSWORD?.trim();
+const PORT = process.env.PORT;
 
 if (!TURSO_URL || !TURSO_TOKEN) {
   console.error('❌ TURSO_URL / TURSO_TOKEN 환경변수가 필요합니다. (.env 또는 Render 환경변수)');
