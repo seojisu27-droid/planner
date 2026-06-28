@@ -10,10 +10,17 @@ services:
     startCommand: node server.js
     healthCheckPath: /healthz
     envVars:
-      # 아래 3개는 보안값이라 Render 대시보드에서 직접 입력합니다 (sync: false)
+      # 아래 값들은 보안값이라 Render 대시보드에서 직접 입력합니다 (sync: false)
       - key: TURSO_URL
         sync: false
       - key: TURSO_TOKEN
         sync: false
-      - key: APP_PASSWORD
+      - key: NAVER_CLIENT_ID
+        sync: false
+      - key: NAVER_CLIENT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      # 선택: 특정 네이버 계정만 허용하려면 쉼표로 이메일 입력 (비우면 전체 허용)
+      - key: ALLOWED_NAVER_EMAILS
         sync: false

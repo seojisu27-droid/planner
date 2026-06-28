@@ -899,6 +899,7 @@
     <button onclick="document.getElementById('importFile').click()">⬆ 불러오기</button>
     <span class="backup-status" id="syncStatus" style="color:#636e72">동기화 확인 중…</span>
     <span class="backup-status" id="backupStatus" style="margin-left:14px">⚠️ 폴더백업 OFF</span>
+    <span id="authBox" style="margin-left:auto"></span>
   </div>
 
   <!-- 상단: 위클리 -->
@@ -1724,14 +1725,14 @@ function updateBackupStatus() {
   }
 }
 
-// ── 클라우드 동기화 (Turso 백엔드) ──
-const PW_KEY = 'planner_password';
+// ── 클라우드 동기화 (Turso 백엔드 · 네이버 로그인) ──
 let syncEnabled = false;
 let pushTimer = null;
+let currentUser = null;
 
-function getPw() { return localStorage.getItem(PW_KEY) || ''; }
+// 세션은 HttpOnly 쿠키로 처리되므로 별도 인증 헤더가 필요 없다.
 function apiHeaders() {
-  return { 'Content-Type': 'application/json', 'x-app-password': getPw() };
+  return { 'Content-Type': 'application/json' };
 }
 function setSyncStatus(text, color) {
   const el = document.getElementById('syncStatus');
@@ -1740,29 +1741,41 @@ function setSyncStatus(text, color) {
   el.style.color = color || '#636e72';
 }
 
-async function ensureAuth() {
-  // 비밀번호 검증 루프 (취소 시 오프라인 모드)
-  for (let attempt = 0; attempt < 5; attempt++) {
-    let pw = getPw();
-    if (!pw) {
-      pw = prompt('플래너 접근 비밀번호를 입력하세요');
-      if (pw === null) return false;
-      localStorage.setItem(PW_KEY, pw);
-    }
-    try {
-      const r = await fetch('/api/auth', { headers: apiHeaders() });
-      if (r.ok) return true;
-      if (r.status === 401) {
-        localStorage.removeItem(PW_KEY);
-        alert('비밀번호가 올바르지 않습니다. 다시 입력해주세요.');
-        continue;
-      }
-      return false;
-    } catch (e) {
-      return false; // 네트워크 오류 → 오프라인
-    }
+function renderAuthBox() {
+  const el = document.getElementById('authBox');
+  if (!el) return;
+  if (currentUser) {
+    const who = currentUser.name || currentUser.email || '네이버';
+    el.innerHTML = `<span style="color:#03C75A;font-weight:600">● ${who}</span>` +
+      ` <button onclick="logout()" style="margin-left:6px;padding:3px 10px;border:1px solid #d0d0d0;border-radius:6px;background:#fff;cursor:pointer;font-size:12px">로그아웃</button>`;
+  } else {
+    el.innerHTML = `<a href="/auth/naver" style="display:inline-flex;align-items:center;gap:6px;` +
+      `padding:5px 12px;border-radius:6px;background:#03C75A;color:#fff;text-decoration:none;` +
+      `font-size:13px;font-weight:600">🟢 네이버로 로그인</a>`;
   }
-  return false;
+}
+
+async function logout() {
+  try { await fetch('/auth/logout', { method: 'POST' }); } catch {}
+  currentUser = null;
+  syncEnabled = false;
+  location.reload();
+}
+
+// 현재 세션 확인. true=로그인됨, false=미로그인, null=네트워크 오류(오프라인)
+async function ensureAuth() {
+  try {
+    const r = await fetch('/api/me');
+    if (r.ok) {
+      const d = await r.json();
+      currentUser = d.user || null;
+      return true;
+    }
+    if (r.status === 401) { currentUser = null; return false; }
+    return false;
+  } catch (e) {
+    return null; // 네트워크 오류 → 오프라인
+  }
 }
 
 async function pullFromServer() {
@@ -1800,7 +1813,10 @@ async function pushToServer() {
       const t = new Date(d.updated_at);
       setSyncStatus(`☁ ${pad(t.getHours())}:${pad(t.getMinutes())} 동기화됨`, '#00b894');
     } else if (r.status === 401) {
-      setSyncStatus('⚠ 인증 필요 (새로고침)', '#d63031');
+      syncEnabled = false;
+      currentUser = null;
+      renderAuthBox();
+      setSyncStatus('⚠ 로그인이 만료되었습니다. 다시 로그인해주세요', '#d63031');
     } else {
       setSyncStatus('⚠ 저장 실패 (로컬엔 저장됨)', '#d63031');
     }
@@ -1812,9 +1828,15 @@ async function pushToServer() {
 async function initSync() {
   setSyncStatus('동기화 확인 중…');
   const ok = await ensureAuth();
-  if (!ok) {
+  renderAuthBox();
+  if (ok === null) {
     syncEnabled = false;
     setSyncStatus('⚠ 오프라인 모드 (로컬에만 저장)', '#d63031');
+    return;
+  }
+  if (!ok) {
+    syncEnabled = false;
+    setSyncStatus('네이버로 로그인하면 클라우드 동기화가 시작됩니다', '#d63031');
     return;
   }
   syncEnabled = true;
