@@ -253,37 +253,57 @@ app.get('/api/me', auth, (req, res) => {
   res.json({ ok: true, user: { name: req.user.name, email: req.user.email } });
 });
 
+// 상태가 비어있는지 (할 일/일정이 하나도 없는지)
+function isEmptyState(data) {
+  if (!data) return true;
+  const t = data.todos || {};
+  const e = data.events || {};
+  return Object.keys(t).length === 0 && Object.keys(e).length === 0;
+}
+function safeParse(s) {
+  try { return JSON.parse(s); } catch { return null; }
+}
+
 // 상태 읽기 (로그인한 네이버 계정의 플래너만)
 app.get('/api/state', auth, async (req, res) => {
   try {
     const uid = String(req.user.uid);
+    const email = (req.user.email || '').toLowerCase();
     const r = await db.execute({
       sql: 'SELECT data, updated_at FROM user_state WHERE user_id = ?',
       args: [uid],
     });
-    if (r.rows.length > 0) {
-      const data = JSON.parse(r.rows[0].data);
-      return res.json({ ...data, updated_at: r.rows[0].updated_at });
-    }
+    const myRow = r.rows[0];
+    const myData = myRow ? safeParse(myRow.data) : null;
 
-    // 내 행이 아직 없음. 소유자라면 레거시(id=1) 데이터를 1회 이관한다.
-    const email = (req.user.email || '').toLowerCase();
-    if (OWNER_NAVER_EMAIL && email === OWNER_NAVER_EMAIL) {
+    // 소유자이고 내 플래너가 (없거나) 비어있으면 레거시(id=1) 데이터를 1회 이관한다.
+    // 이관 후 레거시 행은 제거하여 다시 이관되지 않도록 한다(소유자가 직접 비웠을 때 되살아남 방지).
+    if (OWNER_NAVER_EMAIL && email === OWNER_NAVER_EMAIL && isEmptyState(myData)) {
       const legacy = await db.execute('SELECT data, updated_at FROM planner_state WHERE id = 1');
-      if (legacy.rows.length > 0) {
-        const updatedAt = legacy.rows[0].updated_at || new Date().toISOString();
-        await db.execute({
-          sql: `INSERT INTO user_state (user_id, email, name, data, updated_at)
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(user_id) DO NOTHING`,
-          args: [uid, req.user.email || '', req.user.name || '', legacy.rows[0].data, updatedAt],
-        });
-        console.log('[이관] 레거시 플래너 데이터를 소유자에게 이관:', email);
-        const data = JSON.parse(legacy.rows[0].data);
+      const legacyRow = legacy.rows[0];
+      if (legacyRow && !isEmptyState(safeParse(legacyRow.data))) {
+        const updatedAt = legacyRow.updated_at || new Date().toISOString();
+        await db.batch([
+          {
+            sql: `INSERT INTO user_state (user_id, email, name, data, updated_at)
+                  VALUES (?, ?, ?, ?, ?)
+                  ON CONFLICT(user_id) DO UPDATE SET
+                    data = excluded.data, updated_at = excluded.updated_at,
+                    email = excluded.email, name = excluded.name`,
+            args: [uid, req.user.email || '', req.user.name || '', legacyRow.data, updatedAt],
+          },
+          { sql: 'DELETE FROM planner_state WHERE id = 1', args: [] },
+        ]);
+        console.log('[이관] 레거시 플래너 데이터를 소유자에게 이관 완료:', email);
+        const data = JSON.parse(legacyRow.data);
         return res.json({ ...data, updated_at: updatedAt });
       }
     }
 
+    if (myRow) {
+      const data = myData || { todos: {}, events: {}, colorLabels: {} };
+      return res.json({ ...data, updated_at: myRow.updated_at });
+    }
     // 신규 사용자 → 빈 플래너
     res.json({ todos: {}, events: {}, colorLabels: {}, updated_at: null });
   } catch (e) {
