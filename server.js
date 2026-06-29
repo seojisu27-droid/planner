@@ -276,6 +276,12 @@ app.get('/api/state', auth, async (req, res) => {
     const myRow = r.rows[0];
     const myData = myRow ? safeParse(myRow.data) : null;
 
+    if (isEmptyState(myData)) {
+      console.log('[state] 빈 플래너 | 로그인이메일:', JSON.stringify(req.user.email),
+        '| OWNER설정:', JSON.stringify(OWNER_NAVER_EMAIL),
+        '| 소유자매칭:', !!OWNER_NAVER_EMAIL && email === OWNER_NAVER_EMAIL);
+    }
+
     // 소유자이고 내 플래너가 (없거나) 비어있으면 레거시(id=1) 데이터를 1회 이관한다.
     // 이관 후 레거시 행은 제거하여 다시 이관되지 않도록 한다(소유자가 직접 비웠을 때 되살아남 방지).
     if (OWNER_NAVER_EMAIL && email === OWNER_NAVER_EMAIL && isEmptyState(myData)) {
