@@ -887,7 +887,10 @@
 <div class="wrap">
   <div class="title-row">
     <h1>Planner</h1>
-    <div class="sub">데이터는 Turso 클라우드에 동기화됩니다 · 어느 기기에서나 접속 가능</div>
+    <div class="sub" style="display:flex; gap:14px; align-items:center;">
+      <span class="backup-status" id="syncStatus" style="color:#636e72; margin-left:0">동기화 확인 중…</span>
+      <span class="backup-status" id="backupStatus" style="margin-left:0">⚠️ 폴더백업 OFF</span>
+    </div>
   </div>
 
   <!-- 백업 바 -->
@@ -897,8 +900,6 @@
     <button onclick="exportJson()">⬇ 수동 내보내기</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJson(event)">
     <button onclick="document.getElementById('importFile').click()">⬆ 불러오기</button>
-    <span class="backup-status" id="syncStatus" style="color:#636e72">동기화 확인 중…</span>
-    <span class="backup-status" id="backupStatus" style="margin-left:14px">⚠️ 폴더백업 OFF</span>
     <span id="authBox" style="margin-left:auto"></span>
   </div>
 
