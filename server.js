@@ -250,7 +250,7 @@ app.get('/healthz', (req, res) => res.json({ ok: true }));
 
 // 현재 로그인 사용자 정보 (프론트 인증 확인용)
 app.get('/api/me', auth, (req, res) => {
-  res.json({ ok: true, user: { name: req.user.name, email: req.user.email } });
+  res.json({ ok: true, user: { uid: req.user.uid, name: req.user.name, email: req.user.email } });
 });
 
 // 상태가 비어있는지 (할 일/일정이 하나도 없는지)
