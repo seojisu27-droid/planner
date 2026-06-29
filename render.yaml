@@ -24,3 +24,6 @@ services:
       # 선택: 특정 네이버 계정만 허용하려면 쉼표로 이메일 입력 (비우면 전체 허용)
       - key: ALLOWED_NAVER_EMAILS
         sync: false
+      # 선택: 기존 단일 플래너 데이터를 넘겨받을 소유자 네이버 이메일 (1회 이관)
+      - key: OWNER_NAVER_EMAIL
+        sync: false

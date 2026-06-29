@@ -19,6 +19,9 @@ const ALLOWED_EMAILS = (process.env.ALLOWED_NAVER_EMAILS || '')
   .split(',')
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
+// 선택: 기존 단일 데이터(id=1)를 이관받을 소유자 이메일.
+// 이 계정이 처음 로그인할 때 레거시 플래너 데이터를 자기 계정으로 1회 복사한다.
+const OWNER_NAVER_EMAIL = (process.env.OWNER_NAVER_EMAIL || '').trim().toLowerCase();
 // 세션 쿠키 서명 키 (미설정 시 client secret에서 파생 — 가능하면 별도 지정 권장)
 const SESSION_SECRET = (process.env.SESSION_SECRET || NAVER_CLIENT_SECRET || '').trim();
 const PORT = process.env.PORT;
@@ -28,6 +31,7 @@ console.log(
   '| TOKEN len:', TURSO_TOKEN?.length || 0,
   '| NAVER_CLIENT_ID set:', !!NAVER_CLIENT_ID,
   '| ALLOWED_EMAILS:', ALLOWED_EMAILS.length || '(전체 허용)',
+  '| OWNER:', OWNER_NAVER_EMAIL || '(이관 안 함)',
 );
 
 if (!TURSO_URL || !TURSO_TOKEN) {
@@ -45,11 +49,21 @@ if (!SESSION_SECRET) {
 
 const db = createClient({ url: TURSO_URL, authToken: TURSO_TOKEN });
 
-// 단일 행(id=1)에 전체 상태를 JSON으로 저장
 async function initDb() {
+  // 레거시: 단일 사용자 시절 데이터 (id=1). 이관 소스로만 남겨둔다.
   await db.execute(`
     CREATE TABLE IF NOT EXISTS planner_state (
       id INTEGER PRIMARY KEY CHECK (id = 1),
+      data TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  `);
+  // 멀티 사용자: 네이버 계정(uid)별로 플래너 상태를 한 행씩 저장
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS user_state (
+      user_id TEXT PRIMARY KEY,
+      email TEXT,
+      name TEXT,
       data TEXT NOT NULL,
       updated_at TEXT NOT NULL
     )
@@ -136,10 +150,6 @@ function auth(req, res, next) {
     req.user = session;
     return next();
   }
-  if (req.path === '/me') {
-    console.log('[인증] /api/me 401 — 세션쿠키 도착:', !!cookies[SESSION_COOKIE],
-      '| 검증통과:', !!session);
-  }
   res.status(401).json({ error: 'unauthorized' });
 }
 
@@ -166,9 +176,6 @@ app.get('/auth/naver/callback', async (req, res) => {
     const cookies = parseCookies(req);
     const saved = verifyToken(cookies[OAUTH_STATE_COOKIE]);
     setCookie(res, OAUTH_STATE_COOKIE, '', 0, secure); // state 쿠키 즉시 제거
-    console.log('[콜백] base:', baseUrl(req), '| secure:', secure,
-      '| code:', !!code, '| state쿠키있음:', !!cookies[OAUTH_STATE_COOKIE],
-      '| state검증:', !!saved && saved.state === state);
 
     if (!code || !state || !saved || saved.state !== state) {
       return res.status(400).send('OAuth state 검증 실패. 다시 로그인해주세요.');
@@ -224,7 +231,7 @@ app.get('/auth/naver/callback', async (req, res) => {
       exp: Date.now() + SESSION_TTL_MS,
     };
     setCookie(res, SESSION_COOKIE, signToken(session), SESSION_TTL_MS, secure);
-    console.log('[콜백] ✅ 로그인 성공 → 세션 쿠키 발급:', session.email || session.uid, '| secure쿠키:', secure);
+    console.log('로그인:', session.email || session.uid);
     res.redirect('/');
   } catch (e) {
     console.error('OAuth 콜백 오류', e);
@@ -246,24 +253,49 @@ app.get('/api/me', auth, (req, res) => {
   res.json({ ok: true, user: { name: req.user.name, email: req.user.email } });
 });
 
-// 상태 읽기
+// 상태 읽기 (로그인한 네이버 계정의 플래너만)
 app.get('/api/state', auth, async (req, res) => {
   try {
-    const r = await db.execute('SELECT data, updated_at FROM planner_state WHERE id = 1');
-    if (r.rows.length === 0) {
-      return res.json({ todos: {}, events: {}, colorLabels: {}, updated_at: null });
+    const uid = String(req.user.uid);
+    const r = await db.execute({
+      sql: 'SELECT data, updated_at FROM user_state WHERE user_id = ?',
+      args: [uid],
+    });
+    if (r.rows.length > 0) {
+      const data = JSON.parse(r.rows[0].data);
+      return res.json({ ...data, updated_at: r.rows[0].updated_at });
     }
-    const data = JSON.parse(r.rows[0].data);
-    res.json({ ...data, updated_at: r.rows[0].updated_at });
+
+    // 내 행이 아직 없음. 소유자라면 레거시(id=1) 데이터를 1회 이관한다.
+    const email = (req.user.email || '').toLowerCase();
+    if (OWNER_NAVER_EMAIL && email === OWNER_NAVER_EMAIL) {
+      const legacy = await db.execute('SELECT data, updated_at FROM planner_state WHERE id = 1');
+      if (legacy.rows.length > 0) {
+        const updatedAt = legacy.rows[0].updated_at || new Date().toISOString();
+        await db.execute({
+          sql: `INSERT INTO user_state (user_id, email, name, data, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(user_id) DO NOTHING`,
+          args: [uid, req.user.email || '', req.user.name || '', legacy.rows[0].data, updatedAt],
+        });
+        console.log('[이관] 레거시 플래너 데이터를 소유자에게 이관:', email);
+        const data = JSON.parse(legacy.rows[0].data);
+        return res.json({ ...data, updated_at: updatedAt });
+      }
+    }
+
+    // 신규 사용자 → 빈 플래너
+    res.json({ todos: {}, events: {}, colorLabels: {}, updated_at: null });
   } catch (e) {
     console.error('GET /api/state 실패', e);
     res.status(500).json({ error: e.message });
   }
 });
 
-// 상태 저장 (전체 덮어쓰기, 단일 사용자 last-write-wins)
+// 상태 저장 (로그인 계정별 전체 덮어쓰기, last-write-wins)
 app.put('/api/state', auth, async (req, res) => {
   try {
+    const uid = String(req.user.uid);
     const body = req.body || {};
     const payload = {
       todos: body.todos || {},
@@ -272,10 +304,14 @@ app.put('/api/state', auth, async (req, res) => {
     };
     const now = new Date().toISOString();
     await db.execute({
-      sql: `INSERT INTO planner_state (id, data, updated_at)
-            VALUES (1, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`,
-      args: [JSON.stringify(payload), now],
+      sql: `INSERT INTO user_state (user_id, email, name, data, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+              data = excluded.data,
+              updated_at = excluded.updated_at,
+              email = excluded.email,
+              name = excluded.name`,
+      args: [uid, req.user.email || '', req.user.name || '', JSON.stringify(payload), now],
     });
     res.json({ ok: true, updated_at: now });
   } catch (e) {
