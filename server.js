@@ -183,11 +183,21 @@ app.get('/auth/naver/callback', async (req, res) => {
     tokenUrl.searchParams.set('state', String(state));
     tokenUrl.searchParams.set('redirect_uri', redirectUriFor(req));
 
+    const usedRedirectUri = redirectUriFor(req);
     const tokenRes = await fetch(tokenUrl.toString());
     const tokenJson = await tokenRes.json();
     if (!tokenJson.access_token) {
-      console.error('네이버 토큰 교환 실패', tokenJson);
-      return res.status(400).send('네이버 토큰 교환에 실패했습니다.');
+      console.error('네이버 토큰 교환 실패', tokenJson, '| redirect_uri:', usedRedirectUri);
+      return res
+        .status(400)
+        .type('text/plain; charset=utf-8')
+        .send(
+          '네이버 토큰 교환에 실패했습니다.\n\n' +
+          `error: ${tokenJson.error || '(없음)'}\n` +
+          `error_description: ${tokenJson.error_description || '(없음)'}\n` +
+          `보낸 redirect_uri: ${usedRedirectUri}\n\n` +
+          '※ 네이버 개발자센터에 등록된 Callback URL 과 위 redirect_uri 가 정확히 같아야 합니다.'
+        );
     }
 
     // 프로필 조회
