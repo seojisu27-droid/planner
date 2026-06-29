@@ -117,6 +117,14 @@ const app = express();
 app.set('trust proxy', 1); // Render 등 프록시 뒤에서 https/host 정확히 인식
 app.use(express.json({ limit: '5mb' }));
 
+// 로그인 게이트: 미인증 상태로 메인 페이지에 들어오면 바로 네이버 로그인으로 보낸다.
+// (정적 파일 서빙보다 먼저 등록되어야 '/' · '/index.html' 을 가로챈다)
+app.get(['/', '/index.html'], (req, res, next) => {
+  const cookies = parseCookies(req);
+  if (verifyToken(cookies[SESSION_COOKIE])) return next(); // 로그인됨 → 정적 파일 서빙으로
+  res.redirect('/auth/naver');
+});
+
 // 정적 파일 (index.html 등) 서빙
 app.use(express.static(__dirname, { extensions: ['html'] }));
 
