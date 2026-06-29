@@ -128,6 +128,10 @@ function auth(req, res, next) {
     req.user = session;
     return next();
   }
+  if (req.path === '/me') {
+    console.log('[인증] /api/me 401 — 세션쿠키 도착:', !!cookies[SESSION_COOKIE],
+      '| 검증통과:', !!session);
+  }
   res.status(401).json({ error: 'unauthorized' });
 }
 
@@ -154,6 +158,9 @@ app.get('/auth/naver/callback', async (req, res) => {
     const cookies = parseCookies(req);
     const saved = verifyToken(cookies[OAUTH_STATE_COOKIE]);
     setCookie(res, OAUTH_STATE_COOKIE, '', 0, secure); // state 쿠키 즉시 제거
+    console.log('[콜백] base:', baseUrl(req), '| secure:', secure,
+      '| code:', !!code, '| state쿠키있음:', !!cookies[OAUTH_STATE_COOKIE],
+      '| state검증:', !!saved && saved.state === state);
 
     if (!code || !state || !saved || saved.state !== state) {
       return res.status(400).send('OAuth state 검증 실패. 다시 로그인해주세요.');
@@ -199,6 +206,7 @@ app.get('/auth/naver/callback', async (req, res) => {
       exp: Date.now() + SESSION_TTL_MS,
     };
     setCookie(res, SESSION_COOKIE, signToken(session), SESSION_TTL_MS, secure);
+    console.log('[콜백] ✅ 로그인 성공 → 세션 쿠키 발급:', session.email || session.uid, '| secure쿠키:', secure);
     res.redirect('/');
   } catch (e) {
     console.error('OAuth 콜백 오류', e);
