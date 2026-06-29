@@ -6,6 +6,7 @@
 todolist-data.json
 todolist-readable.md
 todolist-backup-*.json
+todolist-restore.json
 
 # 의존성
 node_modules/
